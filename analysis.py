@@ -34,6 +34,8 @@ def wavelet_denoising(df, waveletname='sym4'):
     data_l, c_l = pywt.dwt(data, waveletname)
     lws = np.array([0.1 if i < 3 else 0.5 for i in range(levels)])
 
+    # Empirical evidence suggests that a good initial guess for the 
+    # decomposition depth is about half of the maximum possible depth
     dec = 2.
     fig, axs = plt.subplots(nrows=levels, ncols=2, figsize=(20, 20))
     for i in range(levels):
