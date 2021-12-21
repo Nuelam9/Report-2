@@ -37,7 +37,8 @@ def fourierExtrapolation(x, n_predict, n_harm=10):
     
     return restored_sign + p[0] * t + p[1]
 
-def wavelet_denoising(df, waveletname='sym4'):
+def wavelet_coeffs_plot(df, waveletname='sym4', figsize=(10, 10),
+                        label_size=10, title_size=14):
     """Plot of wavelen data and coefficients approximation.
 
     Args:
@@ -49,9 +50,6 @@ def wavelet_denoising(df, waveletname='sym4'):
     """
     t = np.arange(len(df))
     data = df.Load.to_numpy().copy()
-    
-    plt.plot(data, c='k', lw=0.1)
-    plt.show()
 
     levels = pywt.dwt_max_level(len(data), waveletname)
     data_l, c_l = pywt.dwt(data, waveletname)
@@ -60,17 +58,34 @@ def wavelet_denoising(df, waveletname='sym4'):
     # Empirical evidence suggests that a good initial guess for the 
     # decomposition depth is about half of the maximum possible depth
     dec = 2.
-    fig, axs = plt.subplots(nrows=levels, ncols=2, figsize=(20, 20))
+    fig, axs = plt.subplots(nrows=levels, ncols=2, figsize=figsize,
+                            constrained_layout=True)
     for i in range(levels):
         axs[i, 0].plot(data_l, 'r', lw=lws[i])
         axs[i, 0].set_xlim(t[0] // dec, t[-1] // dec)
         axs[i, 1].plot(c_l, 'g', lw=lws[i])
         axs[i, 1].set_xlim(t[0] // dec, t[-1] // dec)
-        axs[i, 0].set_ylabel(f"Level {i + 1}", fontsize=14, rotation=90)
+        axs[i, 0].set_ylabel(f"Level {i + 1}", fontsize=label_size, rotation=90)
         dec *= 2.
         if i == 0:
-            axs[i, 0].set_title("Approximation coefficients", fontsize=14)        
-            axs[i, 1].set_title("Detail coefficients", fontsize=14)        
-    plt.tight_layout()
+            axs[i, 0].set_title("Approximation coefficients",
+                                fontsize=title_size, weight='bold')        
+            axs[i, 1].set_title("Detail coefficients", fontsize=title_size,
+                                weight='bold')        
     plt.show()
     return data_l, c_l
+
+def wavelet_filter(data, wavelet='sym4', threshold=0.04):
+    maxlev = pywt.dwt_max_level(len(data), wavelet)
+
+    # Decompose into wavelet components, to the level selected
+    coeffs = pywt.wavedec(data, wavelet, level=maxlev)
+
+    # Apply threshold to detail coefficients
+    for i in range(1, len(coeffs)):
+        coeffs[i] = pywt.threshold(coeffs[i], mode='soft', 
+                                   value=threshold*max(coeffs[i]))
+    
+    # Multilevel 1D Inverse Discrete Wavelet Transform
+    datarec = pywt.waverec(coeffs, wavelet)
+    return datarec
