@@ -14,6 +14,29 @@ def q1(x):
 def q2(x):
     return x.quantile(0.975)
 
+def fourierExtrapolation(x, n_predict, n_harm=10):
+    n = x.size
+
+    t = np.arange(0, n)
+    p = np.polyfit(t, x, 1)
+
+    x_notrend = x - p[0] * t - p[1]     # signal detrended 
+    x_freqdom = np.fft.fft(x_notrend)   # signal in frequencies domain
+    f = np.fft.fftfreq(n)               # frequencies
+
+    indexes = list(range(n))
+    indexes.sort(key= lambda i: np.absolute(f[i]))
+
+    t = np.arange(0, n + n_predict)
+    restored_sign = np.zeros(t.size)
+
+    for i in indexes[:1 + n_harm * 2]:
+        amplitude = np.absolute(x_freqdom[i]) / n
+        phase = np.angle(x_freqdom[i])
+        restored_sign += amplitude * np.cos(2 * np.pi * f[i] * t + phase)
+    
+    return restored_sign + p[0] * t + p[1]
+
 def wavelet_denoising(df, waveletname='sym4'):
     """Plot of wavelen data and coefficients approximation.
 
