@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import deconvolve
 import pywt
 
 def normalize(data, data_max, data_min):
@@ -89,3 +90,10 @@ def wavelet_filter(data, wavelet='sym4', threshold=0.04):
     # Multilevel 1D Inverse Discrete Wavelet Transform
     datarec = pywt.waverec(coeffs, wavelet)
     return datarec
+
+def deconvolution(signal, psf, window=96):
+    deconv = np.zeros(len(signal))
+    for i in range(len(signal) // window):
+        deconv[i*window:(i+1)*window +1] = deconvolve(signal[(i*window) : (i+2)*window], psf)[0]
+        deconv[(i+1)*window:(i+2)*window+1] = deconvolve(signal[(i+1)*window:(i+3)*window], psf)[0]
+    return deconv
